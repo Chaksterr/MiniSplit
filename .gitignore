@@ -1,4 +1,12 @@
 # ===========================
+# DOCUMENTATION
+# ===========================
+*.md
+docs/
+backend/docs/
+backend/README.md
+
+# ===========================
 # DEPENDENCIES
 # ===========================
 node_modules/
