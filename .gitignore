@@ -1,0 +1,115 @@
+# ===========================
+# DEPENDENCIES
+# ===========================
+node_modules/
+.pnp
+.pnp.js
+
+# ===========================
+# BUILD OUTPUT
+# ===========================
+# Backend (NestJS)
+backend/dist/
+backend/build/
+
+# Frontend (React/Vite)
+frontend/dist/
+frontend/build/
+frontend/.next/
+frontend/out/
+
+# Global
+dist/
+build/
+
+# ===========================
+# LOGS
+# ===========================
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ===========================
+# ENVIRONMENT VARIABLES
+# ===========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ===========================
+# TESTS & COVERAGE
+# ===========================
+coverage/
+.nyc_output/
+resultats-tests.txt
+
+# ===========================
+# CACHE & TEMP
+# ===========================
+.cache/
+.parcel-cache/
+.temp/
+.tmp/
+temp/
+tmp/
+
+# ===========================
+# OS FILES
+# ===========================
+.DS_Store
+Thumbs.db
+
+# ===========================
+# IDE & EDITORS
+# ===========================
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains (WebStorm, IntelliJ, etc.)
+.idea/
+*.iml
+*.iws
+
+# Other IDEs
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# ===========================
+# UPLOADS & USER FILES
+# ===========================
+uploads/
+public/uploads/
+backend/uploads/
+frontend/public/uploads/
+
+# ===========================
+# RUNTIME
+# ===========================
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# environment variables file for local development
+.env
+
