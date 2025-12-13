@@ -19,7 +19,7 @@ export class Expense {
   @ManyToOne(() => User, { eager: true })
   paidBy: User;
 
-  @ManyToOne(() => Group, { eager: true })
+  @ManyToOne(() => Group, { eager: true, onDelete: 'CASCADE' })
   group: Group;
 
   @ManyToOne(() => Category, { eager: true, nullable: true })

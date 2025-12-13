@@ -43,7 +43,9 @@ export class GroupService {
 
     //Get all groups
     async findAll(){
-        return this.groupReposistory.find();
+        return this.groupReposistory.find({
+          relations: ['memberships', 'expenses'],
+        });
     }
 
     //Get group by id
@@ -54,7 +56,10 @@ export class GroupService {
           );
         }
 
-        const group = await this.groupReposistory.findOneBy({id});
+        const group = await this.groupReposistory.findOne({
+          where: { id },
+          relations: ['memberships', 'expenses'],
+        });
 
         if (!group) {
           throw new NotFoundException('Groupe', id);
@@ -80,8 +85,8 @@ export class GroupService {
       return group;
     }
 
-    //Update group
-    async update(id: number, updateData: UpdateGroupDto){
+    //Update group (admin seulement)
+    async update(id: number, updateData: UpdateGroupDto, userId?: number){
         // Check if group exists
         await this.findById(id);
 
@@ -112,8 +117,8 @@ export class GroupService {
         return this.findById(id);
     }
 
-    //Delete group
-    async delete(id: number){
+    //Delete group (admin seulement)
+    async delete(id: number, userId?: number){
         // Check if group exists
         await this.findById(id);
 

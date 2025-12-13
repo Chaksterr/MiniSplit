@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -8,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 export class AuthService {
   constructor(
     private readonly userService: UserService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -20,10 +22,18 @@ export class AuthService {
     // Créer l'utilisateur (le mot de passe sera hashé par @BeforeInsert)
     const user = await this.userService.create(registerDto);
 
+    // Générer le token JWT
+    const payload = { sub: user.id, email: user.email };
+    const access_token = this.jwtService.sign(payload);
+
     return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+      access_token,
+      message: 'Inscription réussie',
     };
   }
 
@@ -34,10 +44,18 @@ export class AuthService {
       throw new UnauthorizedException('Email ou mot de passe incorrect');
     }
 
+    // Générer le token JWT
+    const payload = { sub: user.id, email: user.email };
+    const access_token = this.jwtService.sign(payload);
+
     return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+      access_token,
+      message: 'Connexion réussie',
     };
   }
 

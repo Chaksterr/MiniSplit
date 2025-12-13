@@ -7,10 +7,16 @@ export class GroupMember {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column()
+  userId: number;
+
+  @Column()
+  groupId: number;
+
   @ManyToOne(() => User, (user) => user.groupMemberships)
   user: User;
 
-  @ManyToOne(() => Group, (group) => group.memberships)
+  @ManyToOne(() => Group, (group) => group.memberships, { onDelete: 'CASCADE' })
   group: Group;
 
   @Column({ default: 'member' })

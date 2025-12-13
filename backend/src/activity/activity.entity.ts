@@ -28,7 +28,7 @@ export class Activity {
   @ManyToOne(() => User, { eager: true })
   user: User;
 
-  @ManyToOne(() => Group, { eager: true, nullable: true })
+  @ManyToOne(() => Group, { eager: true, nullable: true, onDelete: 'CASCADE' })
   group: Group;
 
   @Column({

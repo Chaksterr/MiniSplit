@@ -22,7 +22,7 @@ export class Category {
   @ManyToOne(() => User, { eager: true, nullable: true })
   createdBy: User;
 
-  @ManyToOne(() => Group, { eager: true, nullable: true })
+  @ManyToOne(() => Group, { eager: true, nullable: true, onDelete: 'SET NULL' })
   group: Group;
 
   @CreateDateColumn()

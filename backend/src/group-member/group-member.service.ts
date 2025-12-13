@@ -1,93 +1,76 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from "@nestjs/common";
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { GroupMember } from './group-member.entity';
-import { NotFoundException, ValidationException, DuplicateException, BusinessException } from '../common/exceptions';
+import { NotFoundException, ValidationException } from '../common/exceptions';
 import { AddMemberDto } from './dto/add-member.dto';
 
 @Injectable()
 export class GroupMemberService {
   constructor(
     @InjectRepository(GroupMember)
-    private gmRepository: Repository<GroupMember>,
+    private groupMemberRepository: Repository<GroupMember>,
   ) {}
 
+  // Vérifier si un utilisateur est admin du groupe
+  async isGroupAdmin(userId: number, groupId: number): Promise<boolean> {
+    const membership = await this.groupMemberRepository.findOne({
+      where: { userId, groupId },
+    });
+    return membership?.role === 'admin';
+  }
+
+  // Ajouter un membre
   async addMember(data: AddMemberDto) {
-    // Check if user is already a member of this group
-    const existingMember = await this.gmRepository.findOne({
-      where: { 
-        user: { id: data.userId },
-        group: { id: data.groupId }
-      }
+    if (!data.userId || !data.groupId) {
+      throw new ValidationException('userId et groupId requis');
+    }
+
+    // Vérifier si le membre existe déjà
+    const existing = await this.groupMemberRepository.findOne({
+      where: { userId: data.userId, groupId: data.groupId },
     });
 
-    if (existingMember) {
-      throw new BusinessException(
-        'Utilisateur déjà membre du groupe'
-      );
+    if (existing) {
+      throw new ValidationException('Ce membre fait déjà partie du groupe');
     }
 
-    try {
-      const gm = this.gmRepository.create({
-        user: { id: data.userId },
-        group: { id: data.groupId }
-      });
-      return await this.gmRepository.save(gm);
-    } catch (error) {
-      throw new ValidationException(
-        'Impossible d\'ajouter le membre'
-      );
-    }
+    const member = this.groupMemberRepository.create({
+      userId: data.userId,
+      groupId: data.groupId,
+      role: 'member',
+    });
+    
+    return await this.groupMemberRepository.save(member);
   }
 
-  async removeMember(id: number) {
-    if (!id || id <= 0) {
-      throw new ValidationException(
-        'ID invalide'
-      );
-    }
-
-    // Check if membership exists
-    const member = await this.gmRepository.findOne({ where: { id } });
-    if (!member) {
-      throw new NotFoundException('Membre du groupe', id);
-    }
-
-    const result = await this.gmRepository.delete(id);
-
-    if (result.affected === 0) {
-      throw new NotFoundException('Membre du groupe', id);
-    }
-
-    return {
-      message: 'Membre retiré du groupe avec succès',
-      id
-    };
-  }
-
+  // Obtenir tous les membres d'un groupe
   async findMembersByGroup(groupId: number) {
-    if (!groupId || groupId <= 0) {
-      throw new ValidationException(
-        'ID du groupe invalide'
-      );
-    }
-
-    return this.gmRepository.find({ 
-      where: { group: { id: groupId } }, 
-      relations: ['user', 'group'] 
+    return this.groupMemberRepository.find({
+      where: { groupId },
+      relations: ['user'],
     });
   }
 
+  // Obtenir tous les groupes d'un utilisateur
   async findGroupsByUser(userId: number) {
-    if (!userId || userId <= 0) {
-      throw new ValidationException(
-        'ID de l\'utilisateur invalide'
-      );
+    return this.groupMemberRepository.find({
+      where: { userId },
+      relations: ['group'],
+    });
+  }
+
+  // Supprimer un membre (seulement par admin)
+  async removeMember(id: number) {
+    const member = await this.groupMemberRepository.findOne({
+      where: { id },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Membre', id);
     }
 
-    return this.gmRepository.find({ 
-      where: { user: { id: userId } }, 
-      relations: ['group', 'user'] 
-    });
+    await this.groupMemberRepository.remove(member);
+    return { message: 'Membre retiré avec succès' };
   }
 }

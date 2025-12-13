@@ -5,6 +5,8 @@ import { User } from './user.entity';
 import { NotFoundException, ValidationException, DuplicateException } from '../common/exceptions';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class UserService {
@@ -160,7 +162,12 @@ export class UserService {
   //Delete user
   async delete(id: number){
     // Check if user exists
-    await this.findById(id);
+    const user = await this.findById(id);
+
+    // Delete avatar file if exists
+    if (user.avatar) {
+      await this.deleteAvatarFile(user.avatar);
+    }
 
     const result = await this.userReposistory.delete(id);
 
@@ -172,6 +179,59 @@ export class UserService {
       message: 'Utilisateur supprimé avec succès',
       id
     };
+  }
+
+  //Update avatar
+  async updateAvatar(id: number, filename: string) {
+    const user = await this.findById(id);
+
+    // Delete old avatar if exists
+    if (user.avatar) {
+      await this.deleteAvatarFile(user.avatar);
+    }
+
+    await this.userReposistory.update(id, { avatar: filename });
+
+    return {
+      message: 'Avatar mis à jour avec succès',
+      avatar: filename,
+      avatarUrl: `/uploads/avatars/${filename}`
+    };
+  }
+
+  //Delete avatar
+  async deleteAvatar(id: number) {
+    const user = await this.findById(id);
+
+    if (!user.avatar) {
+      throw new ValidationException('Aucun avatar à supprimer');
+    }
+
+    await this.deleteAvatarFile(user.avatar);
+    
+    // Use query builder to set avatar to null
+    await this.userReposistory
+      .createQueryBuilder()
+      .update()
+      .set({ avatar: null as any })
+      .where('id = :id', { id })
+      .execute();
+
+    return {
+      message: 'Avatar supprimé avec succès'
+    };
+  }
+
+  //Helper to delete avatar file
+  private async deleteAvatarFile(filename: string) {
+    const filePath = path.join(process.cwd(), 'uploads', 'avatars', filename);
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression du fichier avatar:', error);
+    }
   }
   
 }

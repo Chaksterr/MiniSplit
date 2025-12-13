@@ -22,7 +22,7 @@ export class Settlement {
   @Column('decimal', { precision: 10, scale: 3 })
   amount: number;
 
-  @ManyToOne(() => Group, { eager: true })
+  @ManyToOne(() => Group, { eager: true, onDelete: 'CASCADE' })
   group: Group;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

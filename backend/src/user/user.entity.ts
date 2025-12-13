@@ -18,6 +18,9 @@ export class User {
   @Exclude()
   password: string;
 
+  @Column({ nullable: true })
+  avatar: string;
+
   @OneToMany(() => GroupMember, (gm: GroupMember) => gm.user)
   groupMemberships: GroupMember[];
   
