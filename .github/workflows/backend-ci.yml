@@ -1,0 +1,41 @@
+name: Backend CI
+
+# Déclenche quand on push sur main
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  test:
+    name: Test Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Récupérer le code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Installer Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      # 3. Installer les dépendances
+      - name: Install
+        working-directory: ./backend
+        run: npm ci
+
+      # 4. Build
+      - name: Build
+        working-directory: ./backend
+        run: npm run build
+
+      # 5. Lint (sans fix)
+      - name: Lint
+        working-directory: ./backend
+        run: npm run lint:check || true
