@@ -14,7 +14,7 @@ export class Expense {
   @Column('decimal', { precision: 10, scale: 3 })
   amount: number; 
 
-  @Column({ default: 'TND' })
+  @Column({ default: 'DT' })
   currency: string; 
   @ManyToOne(() => User, { eager: true })
   paidBy: User;
@@ -44,6 +44,9 @@ export class Expense {
 
   @Column({ type: 'text', nullable: true })
   notes: string;
+
+  @Column('simple-array', { nullable: true })
+  attachments: string[];
 
   @CreateDateColumn()
   createdAt: Date;

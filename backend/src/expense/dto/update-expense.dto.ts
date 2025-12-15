@@ -25,8 +25,14 @@ export class UpdateExpenseDto {
   date?: string;
 
   @IsOptional()
+  @IsNumber({}, { message: 'ID de la personne qui a payé invalide' })
+  paidBy?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'ID de catégorie invalide' })
+  categoryId?: number;
+
+  @IsOptional()
   @IsArray({ message: 'Les participants doivent être un tableau' })
-  @ValidateNested({ each: true })
-  @Type(() => UserRef)
-  participants?: UserRef[];
+  participants?: number[];
 }

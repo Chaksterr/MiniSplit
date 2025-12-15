@@ -35,4 +35,11 @@ export class CreateExpenseDto {
   @IsOptional()
   @IsNumber({}, { message: 'ID de la catégorie invalide' })
   categoryId?: number;
+
+  @IsOptional()
+  @IsString({ message: 'Le type de partage doit être une chaîne de caractères' })
+  splitType?: string;
+
+  @IsOptional()
+  splitDetails?: any;
 }

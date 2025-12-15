@@ -16,14 +16,14 @@ export type TunisianCategory = typeof TUNISIAN_CATEGORIES[keyof typeof TUNISIAN_
 
 // Currency configuration
 export const CURRENCY = {
-  CODE: 'TND',
-  SYMBOL: 'د.ت',
+  CODE: 'DT',
+  SYMBOL: 'DT',
   NAME: 'Tunisian Dinar',
-  MILLIMES: 1000, // 1 TND = 1000 millimes
+  MILLIMES: 1000, // 1 DT = 1000 millimes
 } as const;
 
-// Format amount in TND
-export function formatTND(amount: number): string {
+// Format amount in DT
+export function formatDT(amount: number): string {
   return `${amount.toFixed(3)} ${CURRENCY.SYMBOL}`;
 }
 
