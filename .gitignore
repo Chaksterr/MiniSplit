@@ -1,10 +1,8 @@
 # ===========================
 # DOCUMENTATION
 # ===========================
-*.md
-docs/
-backend/docs/
-backend/README.md
+# Keep README.md files
+# docs/
 
 # ===========================
 # DEPENDENCIES
