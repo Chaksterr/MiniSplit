@@ -11,7 +11,13 @@ export class Group {
   @Column()
   name: string;
 
-  @Column( {nullable: true })
+  @Column({ 
+    unique: true,
+    length: 8
+  })
+  code: string;
+
+  @Column({ nullable: true })
   description: string;
 
   @OneToMany(() => GroupMember, (gm: GroupMember) => gm.group, { cascade: true, onDelete: 'CASCADE' })

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsBoolean, IsOptional } from 'class-validator';
 
 export class AddMemberDto {
   @IsNotEmpty({ message: 'ID utilisateur requis' })
@@ -8,4 +8,8 @@ export class AddMemberDto {
   @IsNotEmpty({ message: 'ID du groupe requis' })
   @IsNumber({}, { message: 'ID du groupe invalide' })
   groupId: number;
+
+  @IsOptional()
+  @IsBoolean({ message: 'isAdmin doit être un booléen' })
+  isAdmin?: boolean;
 }

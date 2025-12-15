@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { GroupMember } from './group-member.entity';
 import { NotFoundException, ValidationException } from '../common/exceptions';
 import { AddMemberDto } from './dto/add-member.dto';
+import { ActivityService } from '../activity/activity.service';
+import { ActivityAction } from '../activity/activity.entity';
 
 @Injectable()
 export class GroupMemberService {
   constructor(
     @InjectRepository(GroupMember)
     private groupMemberRepository: Repository<GroupMember>,
+    private activityService: ActivityService,
   ) {}
 
   // Vérifier si un utilisateur est admin du groupe
@@ -39,9 +42,22 @@ export class GroupMemberService {
       userId: data.userId,
       groupId: data.groupId,
       role: 'member',
+      isAdmin: data.isAdmin || false,
     });
     
-    return await this.groupMemberRepository.save(member);
+    const savedMember = await this.groupMemberRepository.save(member);
+
+    // Créer une activité
+    await this.activityService.create({
+      userId: data.userId,
+      groupId: data.groupId,
+      action: ActivityAction.MEMBER_JOINED,
+      entityType: 'member',
+      entityId: savedMember.id,
+      details: {},
+    });
+
+    return savedMember;
   }
 
   // Obtenir tous les membres d'un groupe
@@ -60,15 +76,67 @@ export class GroupMemberService {
     });
   }
 
-  // Supprimer un membre (seulement par admin)
-  async removeMember(id: number) {
+  // Promouvoir un membre en admin
+  async promoteToAdmin(id: number) {
     const member = await this.groupMemberRepository.findOne({
       where: { id },
+      relations: ['user'],
     });
 
     if (!member) {
       throw new NotFoundException('Membre', id);
     }
+
+    if (member.role === 'admin') {
+      throw new ValidationException('Ce membre est déjà administrateur');
+    }
+
+    member.role = 'admin';
+    await this.groupMemberRepository.save(member);
+
+    return {
+      message: 'Membre promu administrateur avec succès',
+      member,
+    };
+  }
+
+  // Compter le nombre d'admins dans un groupe
+  async countAdmins(groupId: number): Promise<number> {
+    return this.groupMemberRepository.count({
+      where: { groupId, role: 'admin' },
+    });
+  }
+
+  // Supprimer un membre
+  async removeMember(id: number) {
+    const member = await this.groupMemberRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
+
+    if (!member) {
+      throw new NotFoundException('Membre', id);
+    }
+
+    // Si c'est un admin, vérifier qu'il n'est pas le seul
+    if (member.role === 'admin') {
+      const adminCount = await this.countAdmins(member.groupId);
+      if (adminCount <= 1) {
+        throw new ForbiddenException(
+          'Vous êtes le seul administrateur. Promouvez un autre membre avant de quitter le groupe.'
+        );
+      }
+    }
+
+    // Créer une activité avant de supprimer
+    await this.activityService.create({
+      userId: member.userId,
+      groupId: member.groupId,
+      action: ActivityAction.MEMBER_LEFT,
+      entityType: 'member',
+      entityId: id,
+      details: {},
+    });
 
     await this.groupMemberRepository.remove(member);
     return { message: 'Membre retiré avec succès' };

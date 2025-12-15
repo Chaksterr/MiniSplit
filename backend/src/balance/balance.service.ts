@@ -19,7 +19,7 @@ export class BalanceService {
     });
 
     if (expenses.length === 0) {
-      return { groupId, totalSpent: 0, balances: [] };
+      return { groupId, totalSpent: 0, balances: [], settlementPlan: [] };
     }
 
     // Track each user's paid and share amounts
@@ -34,6 +34,13 @@ export class BalanceService {
         userBalances.set(expense.paidBy.id, {
           userId: expense.paidBy.id,
           userName: expense.paidBy.name,
+          user: {
+            id: expense.paidBy.id,
+            name: expense.paidBy.name,
+            username: expense.paidBy.username,
+            email: expense.paidBy.email,
+            profilePhoto: expense.paidBy.avatar,
+          },
           paid: 0,
           share: 0,
         });
@@ -48,6 +55,13 @@ export class BalanceService {
           userBalances.set(participant.id, {
             userId: participant.id,
             userName: participant.name,
+            user: {
+              id: participant.id,
+              name: participant.name,
+              username: participant.username,
+              email: participant.email,
+              profilePhoto: participant.avatar,
+            },
             paid: 0,
             share: 0,
           });
@@ -65,6 +79,7 @@ export class BalanceService {
       balances.push({
         userId: data.userId,
         userName: data.userName,
+        user: data.user,
         paid: parseFloat(data.paid.toFixed(3)),
         share: parseFloat(data.share.toFixed(3)),
         balance: parseFloat(balance.toFixed(3)),
@@ -72,10 +87,59 @@ export class BalanceService {
       totalSpent += data.paid;
     }
 
+    // Calculate optimized settlement plan
+    const settlementPlan = this.calculateSettlementPlan(balances);
+
     return {
       groupId,
       totalSpent: parseFloat(totalSpent.toFixed(3)),
       balances: balances.sort((a, b) => b.balance - a.balance),
+      settlementPlan,
     };
+  }
+
+  // Calculate optimized settlement plan (minimize transactions)
+  private calculateSettlementPlan(balances: any[]) {
+    // Separate creditors (positive balance) and debtors (negative balance)
+    const creditors = balances
+      .filter(b => b.balance > 0.001)
+      .map(b => ({ ...b }))
+      .sort((a, b) => b.balance - a.balance);
+    
+    const debtors = balances
+      .filter(b => b.balance < -0.001)
+      .map(b => ({ ...b, balance: Math.abs(b.balance) }))
+      .sort((a, b) => b.balance - a.balance);
+
+    const transactions: any[] = [];
+
+    // Greedy algorithm to minimize transactions
+    let i = 0, j = 0;
+    while (i < creditors.length && j < debtors.length) {
+      const creditor = creditors[i];
+      const debtor = debtors[j];
+
+      const amount = Math.min(creditor.balance, debtor.balance);
+
+      if (amount > 0.001) {
+        transactions.push({
+          from: debtor.user?.username || debtor.userName,
+          fromId: debtor.userId,
+          fromPhoto: debtor.user?.profilePhoto,
+          to: creditor.user?.username || creditor.userName,
+          toId: creditor.userId,
+          toPhoto: creditor.user?.profilePhoto,
+          amount: parseFloat(amount.toFixed(3)),
+        });
+      }
+
+      creditor.balance -= amount;
+      debtor.balance -= amount;
+
+      if (creditor.balance < 0.001) i++;
+      if (debtor.balance < 0.001) j++;
+    }
+
+    return transactions;
   }
 }

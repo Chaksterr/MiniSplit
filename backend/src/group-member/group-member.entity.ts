@@ -20,5 +20,8 @@ export class GroupMember {
   group: Group;
 
   @Column({ default: 'member' })
-  role: string; 
+  role: string;
+  
+  @Column({ default: false })
+  isAdmin: boolean;
 }

@@ -25,4 +25,9 @@ export class GroupMemberController {
   getByUser(@Param('userId') userId: number) {
     return this.gmService.findGroupsByUser(userId);
   }
+
+  @Post(':id/promote')
+  promoteToAdmin(@Param('id') id: number) {
+    return this.gmService.promoteToAdmin(id);
+  }
 }

@@ -5,6 +5,11 @@ import { User } from './user.entity';
 import { NotFoundException, ValidationException, DuplicateException } from '../common/exceptions';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { GroupMember } from '../group-member/group-member.entity';
+import { Expense } from '../expense/expense.entity';
+import { Settlement } from '../settlement/settlement.entity';
+import { Activity } from '../activity/activity.entity';
+import { UserCategoryBudget } from '../category/user-category-budget.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -13,6 +18,16 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userReposistory: Repository<User>,
+    @InjectRepository(GroupMember)
+    private groupMemberRepository: Repository<GroupMember>,
+    @InjectRepository(Expense)
+    private expenseRepository: Repository<Expense>,
+    @InjectRepository(Settlement)
+    private settlementRepository: Repository<Settlement>,
+    @InjectRepository(Activity)
+    private activityRepository: Repository<Activity>,
+    @InjectRepository(UserCategoryBudget)
+    private userCategoryBudgetRepository: Repository<UserCategoryBudget>,
   ) {}
 
   //Create user
@@ -22,6 +37,17 @@ export class UserService {
       throw new ValidationException(
         'Nom, email et mot de passe requis'
       );
+    }
+
+    // Validate username if provided
+    if (userData['username']) {
+      const existingUsername = await this.userReposistory.findOne({
+        where: { username: userData['username'] }
+      });
+
+      if (existingUsername) {
+        throw new DuplicateException('Utilisateur', 'username', userData['username']);
+      }
     }
 
     // Validate email format
@@ -108,6 +134,34 @@ export class UserService {
     });
   }
 
+  //Get user by username
+  async findByUsername(username: string): Promise<User | null> {
+    if (!username || username.trim().length === 0) {
+      throw new ValidationException('Nom d\'utilisateur requis');
+    }
+
+    const user = await this.userReposistory.findOne({
+      where: { username }
+    });
+
+    if (!user) {
+      throw new NotFoundException('Utilisateur', username);
+    }
+
+    return user;
+  }
+
+  //Get user by username for authentication (ne lance pas d'exception si non trouvé)
+  async findByUsernameForAuth(username: string): Promise<User | null> {
+    if (!username || username.trim().length === 0) {
+      return null;
+    }
+
+    return this.userReposistory.findOne({
+      where: { username }
+    });
+  }
+
   //Find one user (alias pour findById, utilisé par JWT Strategy)
   async findOne(id: number): Promise<User | null> {
     if (!id || id <= 0) {
@@ -164,11 +218,47 @@ export class UserService {
     // Check if user exists
     const user = await this.findById(id);
 
-    // Delete avatar file if exists
+    // 1. Supprimer tous les budgets personnels de l'utilisateur
+    await this.userCategoryBudgetRepository.delete({ userId: id });
+
+    // 2. Supprimer toutes les activités de l'utilisateur
+    await this.activityRepository.delete({ user: { id } });
+
+    // 3. Supprimer les settlements où l'utilisateur est impliqué
+    await this.settlementRepository
+      .createQueryBuilder()
+      .delete()
+      .where('fromUserId = :userId OR toUserId = :userId', { userId: id })
+      .execute();
+
+    // 4. Supprimer l'utilisateur des participants des dépenses
+    const expenses = await this.expenseRepository
+      .createQueryBuilder('expense')
+      .leftJoinAndSelect('expense.participants', 'participant')
+      .where('participant.id = :userId', { userId: id })
+      .getMany();
+
+    for (const expense of expenses) {
+      expense.participants = expense.participants.filter(p => p.id !== id);
+      await this.expenseRepository.save(expense);
+    }
+
+    // 5. Supprimer les dépenses payées par l'utilisateur
+    await this.expenseRepository
+      .createQueryBuilder()
+      .delete()
+      .where('paidById = :userId', { userId: id })
+      .execute();
+
+    // 6. Supprimer les memberships de l'utilisateur dans les groupes
+    await this.groupMemberRepository.delete({ userId: id });
+
+    // 7. Delete avatar file if exists
     if (user.avatar) {
       await this.deleteAvatarFile(user.avatar);
     }
 
+    // 8. Finalement, supprimer l'utilisateur
     const result = await this.userReposistory.delete(id);
 
     if (result.affected === 0) {

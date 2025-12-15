@@ -13,10 +13,16 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    // Vérifier si l'utilisateur existe déjà
-    const existingUser = await this.userService.findByEmail(registerDto.email);
-    if (existingUser) {
+    // Vérifier si l'email existe déjà
+    const existingUserByEmail = await this.userService.findByEmail(registerDto.email);
+    if (existingUserByEmail) {
       throw new ConflictException('Un utilisateur avec cet email existe déjà');
+    }
+
+    // Vérifier si le username existe déjà
+    const existingUserByUsername = await this.userService.findByUsernameForAuth(registerDto.username);
+    if (existingUserByUsername) {
+      throw new ConflictException('Ce nom d\'utilisateur est déjà pris');
     }
 
     // Créer l'utilisateur (le mot de passe sera hashé par @BeforeInsert)
@@ -30,6 +36,7 @@ export class AuthService {
       user: {
         id: user.id,
         name: user.name,
+        username: user.username,
         email: user.email,
       },
       access_token,
@@ -52,6 +59,7 @@ export class AuthService {
       user: {
         id: user.id,
         name: user.name,
+        username: user.username,
         email: user.email,
       },
       access_token,
