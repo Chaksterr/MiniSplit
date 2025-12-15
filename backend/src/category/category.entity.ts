@@ -16,6 +16,8 @@ export class Category {
   @Column({ default: '#6366f1' })
   color: string;
 
+  // budgetLimit retiré - maintenant géré par UserCategoryBudget (budget personnel par utilisateur)
+
   @Column({ default: false })
   isDefault: boolean;
 

@@ -14,6 +14,10 @@ export class CreateCategoryDto {
   color?: string;
 
   @IsOptional()
+  @IsNumber({}, { message: 'La limite budgétaire doit être un nombre' })
+  budgetLimit?: number;
+
+  @IsOptional()
   @IsBoolean({ message: 'isDefault doit être un booléen' })
   isDefault?: boolean;
 

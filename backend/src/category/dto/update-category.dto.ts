@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsNumber } from 'class-validator';
 
 export class UpdateCategoryDto {
   @IsOptional()
@@ -12,6 +12,9 @@ export class UpdateCategoryDto {
   @IsOptional()
   @IsString({ message: 'La couleur doit être une chaîne de caractères' })
   color?: string;
+
+  @IsOptional()
+  budgetLimit?: number | null;
 
   @IsOptional()
   @IsBoolean({ message: 'isDefault doit être un booléen' })
